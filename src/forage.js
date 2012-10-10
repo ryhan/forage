@@ -6,41 +6,79 @@
  */
 
 
-function analyze( query )
+function analyze( query , callback)
 {
 	var concatTweetText = function(tweetData)
 	{
-		//console.log(_.pluck(tweetData.results, 'text'));
-		return _.pluck(tweetData.results, 'text').join(' ').replace(/"/g,'');
+		var string = _.pluck(tweetData.results, 'text').join(' ');
+
+		string = string.replace(/"/g,'')
+					   .replace(/[\n\r]/g, '')
+					   .replace(/“/g,'')
+					   .replace(/'/g,'')
+					   .replace(/\//g,'')
+					   .replace(/&/g,'')
+					   .replace(/%/g,'')
+					   .replace(/\./g,'')
+					   .replace(/\=/g,'');
+		
+		return string;
 	}
 
 	var getEntites = function(contentData)
 	{
-		//console.log(contentData.query.results);
 		if (contentData.query.results != undefined)
 		{
+			var categories,
+				related;
 
 			if (contentData.query.results.yctCategories != undefined && 
 				contentData.query.results.yctCategories.yctCategory != undefined)
 			{
 				var topicData = contentData.query.results.yctCategories.yctCategory;
-				console.log(_.pluck(topicData, 'content').join(', '));
+
+				categories = _.compact(_.pluck(topicData, 'content'));
 			}
 
 			if (contentData.query.results.entities != undefined &&
 				contentData.query.results.entities.entity != undefined)
 			{
-				var entityData = contentData.query.results.entities.entity
-				console.log( _.uniq(_.pluck(_.pluck(entityData, 'text'),'content')).join(', '));
+				var entityData = contentData.query.results.entities.entity;
+
+				if (entityData.length != undefined)
+				{
+					entityData = _.pluck(entityData, 'text');
+				}
+				else
+				{
+					entityData = [entityData.text];
+				}
+
+				related = _.uniq(_.pluck(entityData,'content'));
 			}
+
+			callback({
+				categories: categories,
+				related: related
+				});
+		}
+		else
+		{
+			console.log('some error occured');
+			callback({});
 		}
 	}
 
-	return fetchTweets( query, function(data){ return contentAnalyze(concatTweetText(data), getEntites); });
+	var handleTweets = function(data)
+	{
+		return contentAnalyze(concatTweetText(data), getEntites); 
+	}
+
+	return fetchTweets( query, handleTweets, true);
 }
 
 
-function fetchTweets( query , callback )
+function fetchTweets( query, callback, noise)
 {
 	$.ajax({
 		url : 'http://search.twitter.com/search.json',
@@ -49,8 +87,8 @@ function fetchTweets( query , callback )
 		data : {
 			q : query,
 			lang : 'en',
-			result_type : 'mixed',
-			rpp : 30,
+			result_type : (noise == true) ? 'mixed' : 'popular',
+			rpp : 50,
 			show_user : true
 		},
 		success : function (data){ return callback(data);}
