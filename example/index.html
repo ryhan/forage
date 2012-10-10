@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Forage.js Example</title>
+	<title>Forage.js Autosuggest Example</title>
 	<link rel="stylesheet" type="text/css" href="css/main.css">
 	<script type="text/javascript" src="js/jquery.js"></script>
 	<script type="text/javascript" src="js/underscore.js"></script>
@@ -9,5 +9,52 @@
 </head>
 <body>
 
+	<form onsubmit="foragefor(); return false;">
+		<input id="query" type="text" value="User Experience" 
+			placeholder="twitter search query" autofocus
+			onkeyup="safeforagefor()"/>
+	</form>
+	<ul id="related"></ul>
+	<ul id="category"></ul>
+
+	<script>
+
+		var input = $('#query')[0];
+
+		function foragefor(){
+			var query = input.value;
+			console.log(query);
+			forage(query, updateDOM);
+		}
+
+		var safeforagefor = limit(foragefor);
+
+		function updateDOM(data){
+
+			$('#category')[0].innerHTML = genList(data.categories);
+
+			var related = genList(data.related).toLowerCase();
+			related = related.replace(new RegExp(input.value.toLowerCase(), 'g'),"<strong>" + input.value + "</strong>");
+			$('#related')[0].innerHTML = related;
+		}
+
+		function genList(array){
+			if (array == undefined){ return ""; }
+			return "<li>"+array.join('</li><li>')+"</li>";
+		}
+
+		function limit( fun ){
+			var lastCalled = 0;
+			var that = this;
+			return function(){
+				var tmp = (new Date()).getTime();
+				if (tmp > lastCalled + 1000){
+					lastCalled = tmp;;
+					fun.apply(that, arguments);
+				}
+			}
+		}
+
+	</script>
 </body>
 </html>

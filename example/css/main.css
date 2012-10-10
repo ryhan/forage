@@ -1,6 +1,46 @@
-body{
+body, input{
 	font-family: Helvetica, arial, freesans, clean, sans-serif;
 	font-size: 16px;
 	font-weight: normal;
+}
+body{
 	padding: 100px;
+	width: 400px;
+}
+input{
+	border: 1px solid #888;
+	border-radius: 2px;
+	box-shadow: inset 0 2px 3px rgba(0,0,0,0.3);
+	color: #555;
+	outline: none;
+	width: 100%;
+	padding: 10px;
+}
+input:focus{
+	border: 1px solid #1F62FF;
+	box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+	color: #000;
+}
+ul{
+	list-style-type: none;
+	padding: 0;
+}
+
+li{
+	background-color: #F5F5F5;
+	border-left: 2px solid #DDD;
+	cursor: pointer;
+	padding: 10px;
+	position: relative;
+	margin-bottom: 2px;
+	-webkit-animation: fallIn 0.5s 1;
+}
+li:hover{
+	background-color: #FFF7C3;
+	border-left: 2px solid #FED975;
+}
+
+@-webkit-keyframes fallIn{
+	0%{top: -50px; left: 0px; opacity: 0;}
+	100%{top: 0; left: 0; opacity: 1;}
 }
