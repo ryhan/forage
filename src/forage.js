@@ -6,25 +6,31 @@
  */
 
 
+
 function analyze( query , callback)
 {
-	var concatTweetText = function(tweetData)
-	{
-		var string = _.pluck(tweetData.results, 'text').join(' ');
+	// Fetch tweets based on the provided query,
+	// and then pass the data to handleTweets();
+	return fetchTweets( query, handleTweets, true);
 
-		string = string.replace(/"/g,'')
-					   .replace(/[\n\r]/g, '')
-					   .replace(/“/g,'')
-					   .replace(/'/g,'')
-					   .replace(/\//g,'')
-					   .replace(/&/g,'')
-					   .replace(/%/g,'')
-					   .replace(/\./g,'')
-					   .replace(/\=/g,'');
-		
-		return string;
+	// Given tweet data, santize the data,
+	// analyze the content, and then return the entities
+	var handleTweets = function(data)
+	{
+		return contentAnalyze(sanitizeTweetText(data), getEntites); 
 	}
 
+	// Pull out the text attribute and remove problematic characters
+	var sanitizeTweetText = function(tweetData)
+	{
+		var string = _.pluck(tweetData.results, 'text').join(' ');
+		return cleanString(string);
+	}
+
+	// Given the content analyzed data, return 
+	// a JSON object containing the categories
+	// that this query belongs to, as well 
+	// as related entites
 	var getEntites = function(contentData)
 	{
 		if (contentData.query.results != undefined)
@@ -32,49 +38,42 @@ function analyze( query , callback)
 			var categories,
 				related;
 
-			if (contentData.query.results.yctCategories != undefined && 
-				contentData.query.results.yctCategories.yctCategory != undefined)
+			// Pull out category data
+			var catGroup = contentData.query.results.yctCategories;
+			if (catGroup != undefined && catGroup.yctCategory != undefined)
 			{
-				var topicData = contentData.query.results.yctCategories.yctCategory;
-
+				var topicData = catGroup.yctCategory;
 				categories = _.compact(_.pluck(topicData, 'content'));
 			}
 
-			if (contentData.query.results.entities != undefined &&
-				contentData.query.results.entities.entity != undefined)
+			// Pull out related entity data
+			var entGroup = contentData.query.results.entities;
+			if (entGroup != undefined && entGroup.entity != undefined)
 			{
-				var entityData = contentData.query.results.entities.entity;
+				var entityData = entGroup.entity;
 
-				if (entityData.length != undefined)
-				{
+				if (entityData.length != undefined){
 					entityData = _.pluck(entityData, 'text');
 				}
-				else
-				{
+				else{
 					entityData = [entityData.text];
 				}
 
 				related = _.uniq(_.pluck(entityData,'content'));
 			}
 
+			// Call the callback function, returning the expected data
 			callback({
 				categories: categories,
 				related: related
-				});
+			});
 		}
 		else
 		{
-			console.log('some error occured');
+			// Some error occurred, so return {empty}
 			callback({});
 		}
 	}
-
-	var handleTweets = function(data)
-	{
-		return contentAnalyze(concatTweetText(data), getEntites); 
-	}
-
-	return fetchTweets( query, handleTweets, true);
 }
 
 
@@ -108,6 +107,19 @@ function contentAnalyze( string, callback )
 	  success : function(data){ return callback(data);}
 	});
 
+}
+
+var cleanString = function(string){
+	return string
+		.replace(/"/g,'')
+	    .replace(/[\n\r]/g, '')
+	    .replace(/“/g,'')
+	    .replace(/'/g,'')
+	    .replace(/\//g,'')
+	    .replace(/&/g,'')
+	    .replace(/%/g,'')
+	    .replace(/\./g,'')
+	    .replace(/\=/g,'');
 }
 
 function self(data){
